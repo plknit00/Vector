@@ -5,20 +5,20 @@
 
 #include "src/vector_test_fixture.h"
 
-TYPED_TEST_P(CommunalPtrTest, Uninitialized) {
-  using PtrT = CommunalPtrTest<TypeParam>::template PtrT<uint64_t>;
+TYPED_TEST_P(VectorTest, Uninitialized) {
+  using PtrT = VectorTest<TypeParam>::template PtrT<uint64_t>;
   PtrT shared;
 
   EXPECT_EQ(shared.get(), nullptr);
   EXPECT_EQ(shared.use_count(), 0);
 }
 
-TYPED_TEST_P(CommunalPtrTest, Construct) {
+TYPED_TEST_P(VectorTest, Construct) {
   auto shared = this->template MakeShared<uint64_t>(1022);
   EXPECT_EQ(*shared, 1022);
 }
 
-TYPED_TEST_P(CommunalPtrTest, Destroy) {
+TYPED_TEST_P(VectorTest, Destroy) {
   std::shared_ptr<bool> destructor_flag;
   {
     auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
@@ -28,7 +28,7 @@ TYPED_TEST_P(CommunalPtrTest, Destroy) {
   EXPECT_TRUE(*destructor_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, Copy) {
+TYPED_TEST_P(VectorTest, Copy) {
   auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
   void* ptr = shared.get();
   auto destroyed_flag = shared->GetDestroyedFlag();
@@ -41,10 +41,9 @@ TYPED_TEST_P(CommunalPtrTest, Copy) {
   EXPECT_FALSE(*destroyed_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, UseCopyAfterOriginalDestroyed) {
-  using PtrT =
-      CommunalPtrTest<TypeParam>::template PtrT<DestructorFlag<uint64_t>>;
-  std::shared_ptr<bool> destructor_flag;
+TYPED_TEST_P(VectorTest, UseCopyAfterOriginalDestroyed) {
+  using PtrT = VectorTest<TypeParam>::template PtrT<DestructorFlag<uint64_t>>;
+  std::vector<bool> destructor_flag;
   {
     PtrT copy;
     void* ptr;
@@ -64,7 +63,7 @@ TYPED_TEST_P(CommunalPtrTest, UseCopyAfterOriginalDestroyed) {
   EXPECT_TRUE(*destructor_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, Move) {
+TYPED_TEST_P(VectorTest, Move) {
   auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
   void* ptr = shared.get();
   auto destroyed_flag = shared->GetDestroyedFlag();
@@ -76,9 +75,8 @@ TYPED_TEST_P(CommunalPtrTest, Move) {
   EXPECT_FALSE(*destroyed_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, UseMoveAfterOriginalDestroyed) {
-  using PtrT =
-      CommunalPtrTest<TypeParam>::template PtrT<DestructorFlag<uint64_t>>;
+TYPED_TEST_P(VectorTest, UseMoveAfterOriginalDestroyed) {
+  using PtrT = VectorTest<TypeParam>::template PtrT<DestructorFlag<uint64_t>>;
   std::shared_ptr<bool> destructor_flag;
   {
     PtrT copy;
@@ -99,7 +97,7 @@ TYPED_TEST_P(CommunalPtrTest, UseMoveAfterOriginalDestroyed) {
   EXPECT_TRUE(*destructor_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, UseCopyAfterMove) {
+TYPED_TEST_P(VectorTest, UseCopyAfterMove) {
   auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
   void* ptr = shared.get();
   auto destroyed_flag = shared->GetDestroyedFlag();
@@ -115,7 +113,7 @@ TYPED_TEST_P(CommunalPtrTest, UseCopyAfterMove) {
   EXPECT_FALSE(*destroyed_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, UseMoveAfterCopy) {
+TYPED_TEST_P(VectorTest, UseMoveAfterCopy) {
   auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
   void* ptr = shared.get();
   auto destroyed_flag = shared->GetDestroyedFlag();
@@ -131,7 +129,7 @@ TYPED_TEST_P(CommunalPtrTest, UseMoveAfterCopy) {
   EXPECT_FALSE(*destroyed_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, UseMoveAfterCopy2) {
+TYPED_TEST_P(VectorTest, UseMoveAfterCopy2) {
   auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
   void* ptr = shared.get();
   auto destroyed_flag = shared->GetDestroyedFlag();
@@ -147,14 +145,14 @@ TYPED_TEST_P(CommunalPtrTest, UseMoveAfterCopy2) {
   EXPECT_FALSE(*destroyed_flag);
 }
 
-TYPED_TEST_P(CommunalPtrTest, NullToNonDefaultConstructor) {
+TYPED_TEST_P(VectorTest, NullToNonDefaultConstructor) {
   auto shared = this->template MakeFromRaw<int>(nullptr);
 
   EXPECT_EQ(shared.use_count(), 1);
   EXPECT_EQ(shared.get(), nullptr);
 }
 
-TYPED_TEST_P(CommunalPtrTest, TwoRefsToNull) {
+TYPED_TEST_P(VectorTest, TwoRefsToNull) {
   auto shared = this->template MakeFromRaw<int>(nullptr);
   auto copy = shared;
 
@@ -169,6 +167,6 @@ REGISTER_TYPED_TEST_SUITE_P(CommunalPtrTest, Uninitialized, Construct, Destroy,
                             NullToNonDefaultConstructor, TwoRefsToNull);
 
 // TODO: uncomment and remove previous line to test your code.
-using Implementations = testing::Types<TemplateWrapper<std::shared_ptr>,
-                                       TemplateWrapper<paige::CommunalPtr>>;
-INSTANTIATE_TYPED_TEST_SUITE_P(CommunalPtr, CommunalPtrTest, Implementations);
+using Implementations = testing::Types<TemplateWrapper<std::vector>,
+                                       TemplateWrapper<paige::Vector>>;
+INSTANTIATE_TYPED_TEST_SUITE_P(Vector, VectorTest, Implementations);

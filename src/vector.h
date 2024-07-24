@@ -81,23 +81,23 @@ class Vector {
   }
 
   // where do i get index from []?
-  T& operator[](const Vector& vec) {
-    if (*vec->length == 0) {
+  T& operator[](size_t pos) {
+    if (*length_ == 0) {
       // return type default constructor?
-      return vec->head_;
+      return head_;
     }
-    auto location = vec->head_ + index;
+    auto location = head_ + pos;
     return location;
   }
 
   T* get() {}
 
   int size() {
-    return *this->length_;
+    return *length_;
   }
 
   bool empty() {
-    return *this->length_ == 0;
+    return *length_ == 0;
   }
 
   void erase() {}
@@ -105,7 +105,7 @@ class Vector {
   void push_back() {}
 
   void reserve(int size) {
-    this->head = operator new(size);
+    head_ = operator new(size);
   }
 
   void clear() {}
@@ -119,7 +119,7 @@ class Vector {
   }
 
   T* back() {
-    return this[*this->length_ - 1];
+    return this[*length_ - 1];
   }
 
   // destructor
