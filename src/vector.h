@@ -4,83 +4,130 @@
 
 namespace paige {
 
-// TODO: Define type `CommunalPtr`, which takes a single template type argument
-// and has the same interface as `std::shared_ptr`.
-
 template <typename T>
-class CommunalPtr {
+
+class Vector {
  public:
   // default constructor
-  explicit CommunalPtr() : value_(nullptr), references_count_(nullptr) {}
+  explicit Vector() : head_(nullptr), length_(nullptr) {}
 
   // non default constructor
-  explicit CommunalPtr(T* val) : value_(val) {
-    references_count_ = new int(1);
-  }
 
   // copy constructor
-  CommunalPtr(const CommunalPtr& ptr)
-      : value_(ptr.value_), references_count_(ptr.references_count_) {
-    if (references_count_ != nullptr) {
-      *references_count_ += 1;
-    }
-  }
-
-  // move constructor
-  CommunalPtr(CommunalPtr&& ptr) noexcept
-      : value_(ptr.value_), references_count_(ptr.references_count_) {
-    ptr.value_ = nullptr;
-    ptr.references_count_ = nullptr;
-  }
-
-  void swap(CommunalPtr& ptr1) {
-    std::swap(ptr1.value_, this->value_);
-    std::swap(ptr1.references_count_, this->references_count_);
-  }
-
-  // overload assignment operator
-  CommunalPtr& operator=(const CommunalPtr& ptr) {
-    CommunalPtr(ptr).swap(*this);
-    return *this;
-  }
-
-  // overload dereference operator
-  T& operator*() {
-    return *value_;
-  }
-
-  // overload arrow operator
-  T* operator->() {
-    return value_;
-  }
-
-  T* get() {
-    return value_;
-  }
-
-  int use_count() {
-    if (references_count_ == nullptr) {
-      return 0;
-    }
-    return *references_count_;
-  }
-
-  // destructor
-  ~CommunalPtr() {
-    // if there are references, delete the this copy
-    if (references_count_ != nullptr) {
-      *references_count_ -= 1;
-      // if the last reference of the ptr was removed, delete the ptr as a whole
-      if (*references_count_ == 0) {
-        delete value_;
-        delete references_count_;
+  Vector(const Vector& vec) : length_(vec.length_) {
+    if (*this->length_ == 0) {
+      vec->head = nullptr;
+    } else {
+      for (int i = 0; i < *this->length_; i++) {
+        vec[i] = this[i];
       }
     }
   }
 
+  // move constructor
+  Vector(Vector&& vec) noexcept : length_(vec.length_) {
+    if (*this->length_ == 0) {
+      vec->head = nullptr;
+    } else {
+      auto len = this->length_;
+      for (int i = 0; i < *len; i++) {
+        vec[i] = this[i];
+      }
+    }
+    // uncertain on this part and how it varies from copy contructor
+    this->head_ = nullptr;
+    *this->length_ = 0;
+  }
+
+  void swap(Vector& vec1, Vector& vec2) {
+    // not sure if i need to resize and if theres any other errors
+    if ((*vec1->length_ != 0) && ((*vec2->length_ != 0))) {
+      if (*vec1->length < vec2->length) {
+        for (int i = 0; i < *vec1->length_; i++) {
+          auto temp = vec1[i];
+          vec1[i] = vec2[i];
+          vec2[i] = temp;
+        }
+        // how to resize vec1??? make it bigger
+        //  how to make vec 2 smaller or is changing length enough
+        for (int i = *vec1->length_ - 1; i < *vec2->length_; i++) {
+          vec1[i] = vec2[i];
+        }
+      }
+    } else {
+      for (int i = 0; i < *vec2->length_; i++) {
+        auto temp = vec1[i];
+        vec1[i] = vec2[i];
+        vec2[i] = temp;
+      }
+      // how to resize vec1??? make it bigger
+      //  how to make vec 2 smaller or is changing length enough
+      for (int i = *vec2->length_ - 1; i < *vec1->length_; i++) {
+        vec2[i] = vec1[i];
+      }
+    }
+    auto temp = vec1->head_;
+    vec1->head_ = vec2->head_;
+    vec2->head_ = temp;
+    auto temp2 = vec1->length_;
+    vec1->length_ = vec2->length_;
+    vec2->length_ = temp;
+  }
+
+  // overload assignment operator
+  Vector& operator=(const Vector& vec) {
+    Vector(vec).swap(*this);
+    return *this;
+  }
+
+  // where do i get index from []?
+  T& operator[](const Vector& vec) {
+    if (*vec->length == 0) {
+      // return type default constructor?
+      return vec->head_;
+    }
+    auto location = vec->head_ + index;
+    return location;
+  }
+
+  T* get() {}
+
+  int size() {
+    return *this->length_;
+  }
+
+  bool empty() {
+    return *this->length_ == 0;
+  }
+
+  void erase() {}
+
+  void push_back() {}
+
+  void reserve(int size) {
+    this->head = operator new(size);
+  }
+
+  void clear() {}
+
+  void insert() {}
+
+  T* front() {
+    if (!empty()) {
+      return this[0];
+    }
+  }
+
+  T* back() {
+    return this[*this->length_ - 1];
+  }
+
+  // destructor
+  ~Vector() {}
+
  private:
-  T* value_;
-  int* references_count_;
+  T* head_;
+  int* length_;
 };
 
 }  // namespace paige
