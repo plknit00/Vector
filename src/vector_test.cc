@@ -43,7 +43,7 @@ TYPED_TEST_P(VectorTest, Copy) {
 
 TYPED_TEST_P(VectorTest, UseCopyAfterOriginalDestroyed) {
   using PtrT = VectorTest<TypeParam>::template PtrT<DestructorFlag<uint64_t>>;
-  std::vector<bool> destructor_flag;
+  std::shared_ptr<bool> destructor_flag;
   {
     PtrT copy;
     void* ptr;
@@ -160,8 +160,8 @@ TYPED_TEST_P(VectorTest, TwoRefsToNull) {
   EXPECT_EQ(copy.get(), nullptr);
 }
 
-REGISTER_TYPED_TEST_SUITE_P(CommunalPtrTest, Uninitialized, Construct, Destroy,
-                            Copy, UseCopyAfterOriginalDestroyed, Move,
+REGISTER_TYPED_TEST_SUITE_P(VectorTest, Uninitialized, Construct, Destroy, Copy,
+                            UseCopyAfterOriginalDestroyed, Move,
                             UseMoveAfterOriginalDestroyed, UseCopyAfterMove,
                             UseMoveAfterCopy, UseMoveAfterCopy2,
                             NullToNonDefaultConstructor, TwoRefsToNull);

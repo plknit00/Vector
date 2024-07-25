@@ -31,13 +31,13 @@ class DestructorFlag {
 
   // The boolean shared pointer that is initially `false`, but set to `true`
   // when this value is destroyed.
-  std::vector<bool> GetDestroyedFlag() {
+  std::shared_ptr<bool> GetDestroyedFlag() {
     return destroyed_;
   }
 
  private:
   T val_;
-  std::vector<bool> destroyed_;
+  std::shared_ptr<bool> destroyed_;
 };
 
 // Helper struct to define a template-template alias
