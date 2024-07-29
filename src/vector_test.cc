@@ -38,10 +38,6 @@ TYPED_TEST_P(VectorTest, PushBack) {
   VectorT vector;
   vector.push_back(0);
 
-  std::vector<uint64_t> v;
-  std::allocator<uint64_t> a;
-  v.push_back(1);
-
   EXPECT_FALSE(vector.empty());
   EXPECT_EQ(vector.size(), 1);
 }
