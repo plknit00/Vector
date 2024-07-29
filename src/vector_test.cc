@@ -1,172 +1,72 @@
+#include "src/vector.h"
+
 #include <memory>
-#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
 
 #include "src/vector_test_fixture.h"
 
-TYPED_TEST_P(VectorTest, Uninitialized) {
-  using PtrT = VectorTest<TypeParam>::template PtrT<uint64_t>;
-  PtrT shared;
+TYPED_TEST_P(VectorTest, Empty) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
 
-  EXPECT_EQ(shared.get(), nullptr);
-  EXPECT_EQ(shared.use_count(), 0);
+  EXPECT_TRUE(vector.empty());
+  EXPECT_EQ(vector.size(), 0);
 }
 
-TYPED_TEST_P(VectorTest, Construct) {
-  auto shared = this->template MakeShared<uint64_t>(1022);
-  EXPECT_EQ(*shared, 1022);
+TYPED_TEST_P(VectorTest, CopyEmpty) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  VectorT vector2 = vector;
+
+  EXPECT_TRUE(vector2.empty());
+  EXPECT_EQ(vector2.size(), 0);
 }
 
-TYPED_TEST_P(VectorTest, Destroy) {
-  std::shared_ptr<bool> destructor_flag;
-  {
-    auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-    destructor_flag = shared->GetDestroyedFlag();
-    // shared should be deleted.
-  }
-  EXPECT_TRUE(*destructor_flag);
+// TYPED_TEST_P(VectorTest, MoveEmpty) {
+//   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+//   VectorT vector;
+//   VectorT vector2 = std::move(vector);
+
+//   EXPECT_TRUE(vector2.empty());
+//   EXPECT_EQ(vector2.size(), 0);
+// }
+
+TYPED_TEST_P(VectorTest, PushBack) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  vector.push_back(0);
+
+  std::vector<uint64_t> v;
+  std::allocator<uint64_t> a;
+  v.push_back(1);
+
+  EXPECT_FALSE(vector.empty());
+  EXPECT_EQ(vector.size(), 1);
 }
 
-TYPED_TEST_P(VectorTest, Copy) {
-  auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-  void* ptr = shared.get();
-  auto destroyed_flag = shared->GetDestroyedFlag();
-  auto copy = shared;
+// TYPED_TEST_P(VectorTest, Copy) {
+//   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+//   VectorT vector;
+//   VectorT vector2 = vector;
 
-  EXPECT_EQ(shared.get(), ptr);
-  EXPECT_EQ(copy.get(), ptr);
-  EXPECT_EQ(shared.use_count(), 2);
-  EXPECT_EQ(copy.use_count(), 2);
-  EXPECT_FALSE(*destroyed_flag);
-}
+//   EXPECT_TRUE(vector2.empty());
+//   EXPECT_EQ(vector2.size(), 0);
+// }
 
-TYPED_TEST_P(VectorTest, UseCopyAfterOriginalDestroyed) {
-  using PtrT = VectorTest<TypeParam>::template PtrT<DestructorFlag<uint64_t>>;
-  std::shared_ptr<bool> destructor_flag;
-  {
-    PtrT copy;
-    void* ptr;
+// TYPED_TEST_P(VectorTest, Move) {
+//   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+//   VectorT vector;
+//   VectorT vector2 = std::move(vector);
 
-    {
-      auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-      ptr = shared.get();
-      destructor_flag = shared->GetDestroyedFlag();
-      copy = shared;
-      // shared should be deleted.
-    }
+//   EXPECT_TRUE(vector2.empty());
+//   EXPECT_EQ(vector2.size(), 0);
+// }
 
-    EXPECT_EQ(copy.get(), ptr);
-    EXPECT_EQ(copy.use_count(), 1);
-    ASSERT_FALSE(*destructor_flag);
-  }
-  EXPECT_TRUE(*destructor_flag);
-}
+REGISTER_TYPED_TEST_SUITE_P(VectorTest, Empty, CopyEmpty, PushBack);
+// Copy, Empty);
 
-TYPED_TEST_P(VectorTest, Move) {
-  auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-  void* ptr = shared.get();
-  auto destroyed_flag = shared->GetDestroyedFlag();
-  auto copy = std::move(shared);
-
-  EXPECT_EQ(shared.get(), nullptr);
-  EXPECT_EQ(copy.get(), ptr);
-  EXPECT_EQ(copy.use_count(), 1);
-  EXPECT_FALSE(*destroyed_flag);
-}
-
-TYPED_TEST_P(VectorTest, UseMoveAfterOriginalDestroyed) {
-  using PtrT = VectorTest<TypeParam>::template PtrT<DestructorFlag<uint64_t>>;
-  std::shared_ptr<bool> destructor_flag;
-  {
-    PtrT copy;
-    void* ptr;
-
-    {
-      auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-      ptr = shared.get();
-      destructor_flag = shared->GetDestroyedFlag();
-      copy = std::move(shared);
-      // shared should be deleted.
-    }
-
-    EXPECT_EQ(copy.get(), ptr);
-    EXPECT_EQ(copy.use_count(), 1);
-    ASSERT_FALSE(*destructor_flag);
-  }
-  EXPECT_TRUE(*destructor_flag);
-}
-
-TYPED_TEST_P(VectorTest, UseCopyAfterMove) {
-  auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-  void* ptr = shared.get();
-  auto destroyed_flag = shared->GetDestroyedFlag();
-  auto copy = std::move(shared);
-  auto copy2 = copy;
-
-  EXPECT_EQ(shared.get(), nullptr);
-  EXPECT_EQ(copy.get(), ptr);
-  EXPECT_EQ(copy2.get(), ptr);
-  EXPECT_EQ(shared.use_count(), 0);
-  EXPECT_EQ(copy.use_count(), 2);
-  EXPECT_EQ(copy2.use_count(), 2);
-  EXPECT_FALSE(*destroyed_flag);
-}
-
-TYPED_TEST_P(VectorTest, UseMoveAfterCopy) {
-  auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-  void* ptr = shared.get();
-  auto destroyed_flag = shared->GetDestroyedFlag();
-  auto copy = shared;
-  auto copy2 = std::move(shared);
-
-  EXPECT_EQ(shared.get(), nullptr);
-  EXPECT_EQ(copy.get(), ptr);
-  EXPECT_EQ(copy2.get(), ptr);
-  EXPECT_EQ(shared.use_count(), 0);
-  EXPECT_EQ(copy.use_count(), 2);
-  EXPECT_EQ(copy2.use_count(), 2);
-  EXPECT_FALSE(*destroyed_flag);
-}
-
-TYPED_TEST_P(VectorTest, UseMoveAfterCopy2) {
-  auto shared = this->template MakeShared<DestructorFlag<uint64_t>>();
-  void* ptr = shared.get();
-  auto destroyed_flag = shared->GetDestroyedFlag();
-  auto copy = shared;
-  auto copy2 = std::move(copy);
-
-  EXPECT_EQ(shared.get(), ptr);
-  EXPECT_EQ(copy.get(), nullptr);
-  EXPECT_EQ(copy2.get(), ptr);
-  EXPECT_EQ(shared.use_count(), 2);
-  EXPECT_EQ(copy.use_count(), 0);
-  EXPECT_EQ(copy2.use_count(), 2);
-  EXPECT_FALSE(*destroyed_flag);
-}
-
-TYPED_TEST_P(VectorTest, NullToNonDefaultConstructor) {
-  auto shared = this->template MakeFromRaw<int>(nullptr);
-
-  EXPECT_EQ(shared.use_count(), 1);
-  EXPECT_EQ(shared.get(), nullptr);
-}
-
-TYPED_TEST_P(VectorTest, TwoRefsToNull) {
-  auto shared = this->template MakeFromRaw<int>(nullptr);
-  auto copy = shared;
-
-  EXPECT_EQ(copy.use_count(), 2);
-  EXPECT_EQ(copy.get(), nullptr);
-}
-
-REGISTER_TYPED_TEST_SUITE_P(VectorTest, Uninitialized, Construct, Destroy, Copy,
-                            UseCopyAfterOriginalDestroyed, Move,
-                            UseMoveAfterOriginalDestroyed, UseCopyAfterMove,
-                            UseMoveAfterCopy, UseMoveAfterCopy2,
-                            NullToNonDefaultConstructor, TwoRefsToNull);
-
-// TODO: uncomment and remove previous line to test your code.
 using Implementations = testing::Types<TemplateWrapper<std::vector>,
                                        TemplateWrapper<paige::Vector>>;
 INSTANTIATE_TYPED_TEST_SUITE_P(Vector, VectorTest, Implementations);
