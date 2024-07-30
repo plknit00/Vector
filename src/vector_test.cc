@@ -265,6 +265,25 @@ TYPED_TEST_P(VectorTest, EraseLong) {
 TYPED_TEST_P(VectorTest, InsertLong) {
   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
   VectorT vector;
+  auto start = vector.begin();
+  vector.insert(start, 0);      // 0
+  vector.insert(start + 2, 3);  // 0,3
+  vector.insert(start, 5);      // 5,0,3
+  vector.insert(start + 4, 7);  // 5,0,3,7
+  vector.insert(start + 3, 9);  // 5,0,9,3,7
+
+  EXPECT_FALSE(vector.empty());
+  EXPECT_EQ(vector.size(), 5);
+  EXPECT_EQ(vector[0], 5);
+  EXPECT_EQ(vector[1], 0);
+  EXPECT_EQ(vector[2], 9);
+  EXPECT_EQ(vector[3], 3);
+  EXPECT_EQ(vector[4], 7);
+}
+
+TYPED_TEST_P(VectorTest, InsertErase) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
   vector.push_back(9);
   auto start = vector.begin();
   vector.erase(start);
@@ -277,7 +296,7 @@ REGISTER_TYPED_TEST_SUITE_P(VectorTest, Empty, CopyEmpty, MoveEmpty, PushBack,
                             Copy, Move, SquareBracketsOp, CopyBig, Data, Clear,
                             ClearCopy, ClearMove, Front, Back, FrontBackEqual,
                             PopBack, Insert, Erase, EraseMedium, EraseLong,
-                            InsertLong);
+                            InsertLong, InsertErase);
 
 using Implementations = testing::Types<TemplateWrapper<std::vector>,
                                        TemplateWrapper<paige::Vector>>;
