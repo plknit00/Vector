@@ -220,14 +220,13 @@ TYPED_TEST_P(VectorTest, EraseMedium) {
   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
   VectorT vector;
   vector.push_back(0);
-  vector.push_back(1);
+  vector.push_back(1);  // e
   vector.push_back(2);
   vector.push_back(3);
-  vector.push_back(4);
+  vector.push_back(4);  // e
   vector.push_back(5);
-  auto start = vector.begin();
-  vector.erase(start + 1);
-  vector.erase(start + 3);
+  vector.erase(vector.begin() + 1);
+  vector.erase(vector.begin() + 3);
 
   EXPECT_FALSE(vector.empty());
   EXPECT_EQ(vector.size(), 4);
@@ -240,15 +239,30 @@ TYPED_TEST_P(VectorTest, EraseMedium) {
 TYPED_TEST_P(VectorTest, EraseLong) {
   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
   VectorT vector;
-  vector.push_back(9);
-  auto start = vector.begin();
-  vector.erase(start);
+  vector.push_back(0);  // e
+  vector.push_back(1);
+  vector.push_back(2);
+  vector.push_back(3);  // e
+  vector.push_back(4);
+  vector.push_back(5);
+  vector.push_back(6);  // e
+  vector.push_back(7);
+  vector.push_back(8);  // e
+  vector.erase(vector.begin());
+  vector.erase(vector.begin() + 5);
+  vector.erase(vector.begin() + 2);
+  vector.erase(vector.begin() + 5);
 
-  EXPECT_TRUE(vector.empty());
-  EXPECT_EQ(vector.size(), 0);
+  EXPECT_FALSE(vector.empty());
+  EXPECT_EQ(vector.size(), 5);
+  EXPECT_EQ(vector[0], 1);
+  EXPECT_EQ(vector[1], 2);
+  EXPECT_EQ(vector[2], 4);
+  EXPECT_EQ(vector[3], 5);
+  EXPECT_EQ(vector[4], 7);
 }
 
-TYPED_TEST_P(VectorTest, InsertErase) {
+TYPED_TEST_P(VectorTest, InsertLong) {
   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
   VectorT vector;
   vector.push_back(9);
@@ -263,7 +277,7 @@ REGISTER_TYPED_TEST_SUITE_P(VectorTest, Empty, CopyEmpty, MoveEmpty, PushBack,
                             Copy, Move, SquareBracketsOp, CopyBig, Data, Clear,
                             ClearCopy, ClearMove, Front, Back, FrontBackEqual,
                             PopBack, Insert, Erase, EraseMedium, EraseLong,
-                            InsertErase);
+                            InsertLong);
 
 using Implementations = testing::Types<TemplateWrapper<std::vector>,
                                        TemplateWrapper<paige::Vector>>;

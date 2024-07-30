@@ -29,14 +29,19 @@ class Vector {
       return iter;
     }
 
+    iterator operator+(ssize_t index) {
+      return iterator(iter_ptr + index);
+    }
+
     ssize_t operator-(const iterator& iter) const {
-      return iter.iter_ptr - iter_ptr;
+      return iter_ptr - iter.iter_ptr;
     }
 
     ~iterator() = default;
 
    private:
     iterator(Vector& vec, int index) : iter_ptr((vec.start_ + index)) {}
+    explicit iterator(T* ptr) : iter_ptr(ptr) {}
     T* iter_ptr;
   };
 
@@ -120,11 +125,10 @@ class Vector {
     int pos_index = pos - begin();
     int final_index = length_ - 1;
     // scoot everything from pos to end over by 1
-    while (pos_index < final_index) {
-      (*this)[pos_index] = (*this)[pos_index + 1];
+    while (pos_index <= final_index) {
+      (*this)[pos_index] = std::move((*this)[pos_index + 1]);
       pos_index++;
     }
-    start_[length_ - 1].~T();
     length_ -= 1;
   }
 
