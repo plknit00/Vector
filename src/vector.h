@@ -10,12 +10,48 @@ template <typename T>
 
 class Vector {
  public:
+  // *********** ITERATOR ***********
+  class iterator {
+    friend class Vector;
+
+   public:
+    // pre increment
+    iterator& operator++() {
+      iter_ptr += sizeof(T);
+      iterator iter = iter_ptr;
+      return iter;
+    }
+
+    // post increment
+    iterator operator++(int) {
+      iterator iter = iter_ptr;
+      iter_ptr += sizeof(T);
+      return iter;
+    }
+
+    ssize_t operator-(const iterator& iter) const {
+      return iter.iter_ptr - iter_ptr;
+    }
+
+    ~iterator() = default;
+
+   private:
+    iterator(Vector& vec, int index) : iter_ptr((vec.start_ + index)) {}
+    T* iter_ptr;
+  };
+
+  iterator begin() {
+    return iterator(*this, 0);
+  }
+
+  iterator end() {
+    return iter(start_, length_);
+  }
+
   // default constructor
   explicit Vector() {
     start_ = static_cast<T*>(::operator new(sizeof(T)));
   }
-
-  // non default constructor
 
   // copy constructor
   Vector(const Vector& vec) : length_(vec.length_), capacity_(vec.capacity_) {
@@ -80,12 +116,34 @@ class Vector {
     return length_ == 0;
   }
 
-  /*void erase(std::iterator<T*> pos) {
-    // std::iterator<T*> start_
-    // int index = pos
-    // T::~T;
-    // start_[0].~T();
-  }*/
+  void erase(iterator pos) {
+    int pos_index = pos - begin();
+    int final_index = length_ - 1;
+    // scoot everything from pos to end over by 1
+    while (pos_index < final_index) {
+      (*this)[pos_index] = (*this)[pos_index + 1];
+      pos_index++;
+    }
+    start_[length_ - 1].~T();
+    length_ -= 1;
+  }
+
+  iterator insert(const iterator pos, const T& value) {
+    if (length_ >= capacity_) {
+      resize(2 * capacity_);
+    }
+    ssize_t pos_index = pos - begin();
+    ssize_t current_index = length_ - 1;
+    // scoot everything from pos to end over by 1
+    while (pos_index <= current_index) {
+      (*this)[current_index + 1] = (*this)[current_index];
+      current_index--;
+    }
+    // insert value before pos
+    (*this)[pos_index - 1] = value;
+    length_ += 1;
+    return iterator(*this, pos_index - 1);
+  }
 
   // only make vector bigger
   // count must be greater than capacity
@@ -120,11 +178,7 @@ class Vector {
       start_[0].~T();
     }
     length_ = 0;
-    // size = 0
-    // capacity remains unchanged
   }
-
-  // void insert() {}
 
   T& front() {
     return (*this)[0];
@@ -139,7 +193,6 @@ class Vector {
     length_ -= 1;
   }
 
-  // destructor
   ~Vector() {
     clear();
     delete start_;
@@ -149,8 +202,6 @@ class Vector {
   T* start_;
   int length_ = 0;
   int capacity_ = 1;
-  // how to implement custom iterator
-  // do i need to keep track of start and end
 };
 
 }  // namespace paige

@@ -1,5 +1,6 @@
 #include "src/vector.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -193,10 +194,76 @@ TYPED_TEST_P(VectorTest, PopBack) {
   EXPECT_EQ(vector.back(), 7);
 }
 
+TYPED_TEST_P(VectorTest, Insert) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  auto start = vector.begin();
+  vector.insert(start, 7);
+
+  EXPECT_FALSE(vector.empty());
+  EXPECT_EQ(vector.size(), 1);
+  EXPECT_EQ(vector[0], 7);
+}
+
+TYPED_TEST_P(VectorTest, Erase) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  vector.push_back(9);
+  auto start = vector.begin();
+  vector.erase(start);
+
+  EXPECT_TRUE(vector.empty());
+  EXPECT_EQ(vector.size(), 0);
+}
+
+TYPED_TEST_P(VectorTest, EraseMedium) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  vector.push_back(0);
+  vector.push_back(1);
+  vector.push_back(2);
+  vector.push_back(3);
+  vector.push_back(4);
+  vector.push_back(5);
+  auto start = vector.begin();
+  vector.erase(start + 1);
+  vector.erase(start + 3);
+
+  EXPECT_FALSE(vector.empty());
+  EXPECT_EQ(vector.size(), 4);
+  EXPECT_EQ(vector[0], 0);
+  EXPECT_EQ(vector[1], 2);
+  EXPECT_EQ(vector[2], 3);
+  EXPECT_EQ(vector[3], 5);
+}
+
+TYPED_TEST_P(VectorTest, EraseLong) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  vector.push_back(9);
+  auto start = vector.begin();
+  vector.erase(start);
+
+  EXPECT_TRUE(vector.empty());
+  EXPECT_EQ(vector.size(), 0);
+}
+
+TYPED_TEST_P(VectorTest, InsertErase) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  vector.push_back(9);
+  auto start = vector.begin();
+  vector.erase(start);
+
+  EXPECT_TRUE(vector.empty());
+  EXPECT_EQ(vector.size(), 0);
+}
+
 REGISTER_TYPED_TEST_SUITE_P(VectorTest, Empty, CopyEmpty, MoveEmpty, PushBack,
                             Copy, Move, SquareBracketsOp, CopyBig, Data, Clear,
                             ClearCopy, ClearMove, Front, Back, FrontBackEqual,
-                            PopBack);
+                            PopBack, Insert, Erase, EraseMedium, EraseLong,
+                            InsertErase);
 
 using Implementations = testing::Types<TemplateWrapper<std::vector>,
                                        TemplateWrapper<paige::Vector>>;
