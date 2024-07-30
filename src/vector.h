@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <iostream>
 #include <utility>
 
 namespace paige {
@@ -17,10 +18,11 @@ class Vector {
   // non default constructor
 
   // copy constructor
-  Vector(const Vector& vec) : length_(vec.length_), capacity_(vec.length_) {
+  Vector(const Vector& vec) : length_(vec.length_), capacity_(vec.capacity_) {
     if (vec.length_ == 0) {
-      start_ = nullptr;
+      start_ = static_cast<T*>(::operator new(sizeof(T)));
     } else {
+      start_ = static_cast<T*>(::operator new(capacity_ * sizeof(T)));
       for (int i = 0; i < length_; i++) {
         (*this)[i] = vec[i];
       }
@@ -28,17 +30,11 @@ class Vector {
   }
 
   // move constructor
-  Vector(Vector&& vec) noexcept : length_(vec.length_), capacity_(vec.length_) {
-    if (this->length_ == 0) {
-      vec->start = nullptr;
-    } else {
-      for (int i = 0; i < this->length; i++) {
-        vec[i] = this[i];
-      }
-    }
-    // uncertain on this part and how it varies from copy contructor
-    this->start_ = nullptr;
-    this->length_ = 0;
+  Vector(Vector&& vec) noexcept
+      : start_(vec.start_), length_(vec.length_), capacity_(vec.capacity_) {
+    vec.start_ = nullptr;
+    vec.length_ = 0;
+    vec.capacity_ = 0;
   }
 
   void swap(Vector& vec1, Vector& vec2) {
@@ -68,8 +64,12 @@ class Vector {
     return *location;
   }
 
-  T* data(int index) {
-    return start_ + index;
+  const T* data() const {
+    return start_;
+  }
+
+  T* data() {
+    return start_;
   }
 
   int size() {
@@ -119,27 +119,24 @@ class Vector {
     for (int i = 0; i < length_; i++) {
       start_[0].~T();
     }
+    length_ = 0;
     // size = 0
     // capacity remains unchanged
   }
 
   // void insert() {}
 
-  T* front() {
-    if (!empty()) {
-      return this[0];
-    }
+  T& front() {
+    return (*this)[0];
   }
 
-  T* back() {
-    return this[length_ - 1];
+  T& back() {
+    return (*this)[length_ - 1];
   }
 
-  T* pop_back() {
-    T* last_elt = this[length_ - 1];
-    T::~T;
+  void pop_back() {
     start_[length_ - 1].~T();
-    return last_elt;
+    length_ -= 1;
   }
 
   // destructor
