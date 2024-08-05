@@ -78,6 +78,18 @@ class Vector {
     vec.capacity_ = 0;
   }
 
+  // Copy-assignment
+  Vector& operator=(Vector&& vector) {
+    clear();
+    free(start_);
+    start_ = vector.start_;
+    length_ = vector.length_;
+    capacity_ = vector.capacity_;
+    vector.start_ = nullptr;
+    vector.length_ = 0;
+    vector.capacity_ = 0;
+  }
+
   void swap(Vector& vec1, Vector& vec2) {
     std::swap(vec1.start_, vec2.start_);
     std::swap(vec1.length_, vec2.length_);
@@ -124,7 +136,7 @@ class Vector {
   void erase(iterator pos) {
     int pos_index = pos - begin();
     int final_index = length_ - 1;
-    // scoot everything from pos to end over by 1
+    // scoot everything from current (pos) to end (final) left by 1
     while (pos_index <= final_index) {
       (*this)[pos_index] = std::move((*this)[pos_index + 1]);
       pos_index++;
@@ -133,37 +145,57 @@ class Vector {
   }
 
   iterator insert(const iterator pos, const T& value) {
-    if (length_ >= capacity_) {
+    ssize_t pos_index = pos - begin();
+    if (length_ == capacity_) {
       resize(2 * capacity_);
     }
-    ssize_t pos_index = pos - begin();
     ssize_t current_index = length_ - 1;
-    // scoot everything from pos to end over by 1
+    // scoot everything from end (current) to pos right by 1
     while (pos_index <= current_index) {
-      (*this)[current_index + 1] = (*this)[current_index];
+      (*this)[current_index + 1] = std::move((*this)[current_index]);
       current_index--;
     }
     // insert value before pos
-    (*this)[pos_index - 1] = value;
+    // CHECK INDEX
+    (*this)[pos_index] = value;
     length_ += 1;
-    return iterator(*this, pos_index - 1);
+    // CHECK INDEX
+    return iterator(*this, pos_index);
   }
 
   // only make vector bigger
   // count must be greater than capacity
   void resize(size_t count) {
-    // allocate space
-    // copy info over
-    start_ = static_cast<T*>(realloc(start_, count * sizeof(T)));
+    auto new_start = static_cast<T*>(malloc(count * sizeof(T)));
+    for (int i = 0; i < length_; i++) {
+      // Call the move constructor on new_start[i], with start_[i] as the
+      // parameter.
+      new (&new_start[i]) T(std::move(start_[i]));
+      // Need to destroy start_[i] even though it was moved (for every
+      // construction there is a matching destruction).
+      start_[i].~T();
+    }
+    start_ = new_start;
     capacity_ = count;
   }
 
   void push_back(const T& element) {
-    if (length_ >= capacity_) {
+    if (length_ == capacity_) {
       resize(2 * capacity_);
     }
     T* ptr = &(*this)[length_];
+    // call constructor of T on ptr, passing element as constructor parameters
     new (ptr) T(element);
+    length_ += 1;
+  }
+
+  void push_back(T&& element) {
+    if (length_ == capacity_) {
+      resize(2 * capacity_);
+    }
+    T* ptr = &(*this)[length_];
+    // call constructore of T on ptr, passing elt as constructor parameters
+    new (ptr) T(std::move(element));
     length_ += 1;
   }
 
@@ -171,15 +203,14 @@ class Vector {
     capacity_ = new_capacity;
     if (start_ == nullptr) {
       start_ = operator new(new_capacity);
-    } else {
-      // is this move constructor?
-      start_ = paige::Vector(&this);
+    } else if (new_capacity > capacity_) {
+      resize(new_capacity);
     }
   }
 
   void clear() {
     for (int i = 0; i < length_; i++) {
-      start_[0].~T();
+      start_[i].~T();
     }
     length_ = 0;
   }
@@ -199,7 +230,7 @@ class Vector {
 
   ~Vector() {
     clear();
-    delete start_;
+    free(start_);
   }
 
  private:

@@ -194,17 +194,6 @@ TYPED_TEST_P(VectorTest, PopBack) {
   EXPECT_EQ(vector.back(), 7);
 }
 
-TYPED_TEST_P(VectorTest, Insert) {
-  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
-  VectorT vector;
-  auto start = vector.begin();
-  vector.insert(start, 7);
-
-  EXPECT_FALSE(vector.empty());
-  EXPECT_EQ(vector.size(), 1);
-  EXPECT_EQ(vector[0], 7);
-}
-
 TYPED_TEST_P(VectorTest, Erase) {
   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
   VectorT vector;
@@ -262,18 +251,28 @@ TYPED_TEST_P(VectorTest, EraseLong) {
   EXPECT_EQ(vector[4], 7);
 }
 
-TYPED_TEST_P(VectorTest, InsertLong) {
+TYPED_TEST_P(VectorTest, Insert) {
   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
   VectorT vector;
   auto start = vector.begin();
-  vector.insert(start, 0);      // 0
-  vector.insert(start + 2, 3);  // 0,3
-  vector.insert(start, 5);      // 5,0,3
-  vector.insert(start + 4, 7);  // 5,0,3,7
-  vector.insert(start + 3, 9);  // 5,0,9,3,7
+  vector.insert(start, 7);
 
   EXPECT_FALSE(vector.empty());
-  EXPECT_EQ(vector.size(), 5);
+  EXPECT_EQ(vector.size(), 1);
+  EXPECT_EQ(vector[0], 7);
+}
+
+TYPED_TEST_P(VectorTest, InsertLong) {
+  using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
+  VectorT vector;
+  vector.insert(vector.begin(), 0);      // 0
+  vector.insert(vector.begin() + 1, 3);  // 0,3
+  vector.insert(vector.begin(), 5);      // 5,0,3
+  vector.insert(vector.begin() + 3, 7);  // 5,0,3,7
+  vector.insert(vector.begin() + 2, 9);  // 5,0,9,3,7
+
+  ASSERT_FALSE(vector.empty());
+  ASSERT_EQ(vector.size(), 5);
   EXPECT_EQ(vector[0], 5);
   EXPECT_EQ(vector[1], 0);
   EXPECT_EQ(vector[2], 9);
@@ -281,22 +280,99 @@ TYPED_TEST_P(VectorTest, InsertLong) {
   EXPECT_EQ(vector[4], 7);
 }
 
+TYPED_TEST_P(VectorTest, ResizeSemantics) {
+  constexpr uint64_t kMagic = UINT64_C(0x123456789abcef0);
+  static uint64_t construct_count = 0;
+  static uint64_t destroyed_count = 0;
+  class Tester {
+   public:
+    Tester() : val_(kMagic) {
+      construct_count++;
+    }
+    Tester(Tester&& tester) noexcept : val_(tester.val_) {
+      construct_count++;
+    }
+    ~Tester() {
+      destroyed_count++;
+      assert(val_ == kMagic);
+    }
+
+    Tester& operator=(Tester&& tester) noexcept {
+      assert(val_ == kMagic);
+      val_ = tester.val_;
+      construct_count++;
+    }
+
+   private:
+    uint64_t val_;
+  };
+
+  {
+    using VectorT = VectorTest<TypeParam>::template VectorT<Tester>;
+    VectorT vector;
+    vector.push_back(Tester());
+    vector.push_back(Tester());
+
+    ASSERT_EQ(vector.size(), 2);
+  }
+
+  EXPECT_EQ(construct_count, 5);
+  EXPECT_EQ(destroyed_count, 5);
+}
+
+TYPED_TEST_P(VectorTest, DeleteSemantics) {
+  static uint64_t construct_count = 0;
+  static uint64_t destroyed_count = 0;
+  class Tester {
+   public:
+    Tester() {
+      construct_count++;
+    }
+    Tester(Tester&& tester) noexcept : val_(tester.val_) {
+      construct_count++;
+    }
+    ~Tester() {
+      destroyed_count++;
+    }
+
+   private:
+    uint64_t val_;
+  };
+
+  {
+    using VectorT = VectorTest<TypeParam>::template VectorT<Tester>;
+    VectorT vector;
+    vector.push_back(Tester());
+  }
+
+  EXPECT_EQ(construct_count, 2);
+  EXPECT_EQ(destroyed_count, 2);
+}
+
 TYPED_TEST_P(VectorTest, InsertErase) {
   using VectorT = VectorTest<TypeParam>::template VectorT<uint64_t>;
   VectorT vector;
-  vector.push_back(9);
-  auto start = vector.begin();
-  vector.erase(start);
+  vector.insert(vector.begin(), 0);      // 0
+  vector.insert(vector.begin() + 1, 3);  // 0,3
+  vector.insert(vector.begin(), 5);      // 5,0,3
+  vector.insert(vector.begin() + 3, 7);  // 5,0,3,7
+  vector.insert(vector.begin() + 2, 9);  // 5,0,9,3,7
+  vector.erase(vector.begin());          // 0,9,3,7
+  vector.erase(vector.begin() + 2);      // 0,9,7
 
-  EXPECT_TRUE(vector.empty());
-  EXPECT_EQ(vector.size(), 0);
+  EXPECT_FALSE(vector.empty());
+  EXPECT_EQ(vector.size(), 3);
+  EXPECT_EQ(vector[0], 0);
+  EXPECT_EQ(vector[1], 9);
+  EXPECT_EQ(vector[2], 7);
 }
 
 REGISTER_TYPED_TEST_SUITE_P(VectorTest, Empty, CopyEmpty, MoveEmpty, PushBack,
                             Copy, Move, SquareBracketsOp, CopyBig, Data, Clear,
                             ClearCopy, ClearMove, Front, Back, FrontBackEqual,
-                            PopBack, Insert, Erase, EraseMedium, EraseLong,
-                            InsertLong, InsertErase);
+                            PopBack, Erase, EraseMedium, EraseLong, Insert,
+                            InsertLong, ResizeSemantics, DeleteSemantics,
+                            InsertErase);
 
 using Implementations = testing::Types<TemplateWrapper<std::vector>,
                                        TemplateWrapper<paige::Vector>>;
